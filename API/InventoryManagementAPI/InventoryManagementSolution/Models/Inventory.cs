@@ -26,5 +26,10 @@ namespace InventoryManagementSolution.Models
         [ForeignKey("userid")] public AppUser AppUser { get; set; }
         
         public ICollection<AvailableProductInstance> AvailableProductInstances { get; set; }
+        public ICollection<ProductType> ProductTypes { get; set; }
+        
+        public ICollection<Supplier> Suppliers { get; set; }
+        
+        public ICollection<Customer> Customers { get; set; }
     }
 }

@@ -1,0 +1,277 @@
+@using InventoryManagementSystemWeb.Components.Models
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IUserService UserService
+@inject IInventoryService InventoryService
+@inject IProductService ProductService
+@inject IProductTypeService ProductTypeService
+@inject ISupplierService SupplierService
+@inject IRestockingTransactionService RestockingTransactionService
+@rendermode InteractiveServer
+
+<div class="header-section">
+    <h3>@_inventoryModel.Name</h3>
+    <div class="action-buttons">
+        <button class="btn" @onclick="AddSupplier">Add Supplier</button>
+        <button class="btn" @onclick="RestockProduct">Restock Product</button>
+    </div>
+</div>
+
+<div class="toggle-section">
+    <button class="btn toggle-btn" @onclick="ToggleView">Show @(_isViewingSuppliers ? "Restocking Transactions" : "Suppliers")</button>
+</div>
+
+<!-- Conditionally render the list based on toggle state -->
+@if (_isViewingSuppliers)
+{
+<div class="list-section">
+    <h4>Suppliers</h4>
+    <ul>
+        @foreach (var supplier in _suppliers)
+        {
+            <li>
+                <span>@supplier.name - @supplier.contactinfo</span>
+                <button class="btn btn-danger btn-sm" @onclick="() => DeleteSupplier(supplier.id)">Delete</button>
+            </li>
+        }
+    </ul>
+</div>
+}
+else
+{
+<div class="list-section">
+    <h4>Restocking Transactions</h4>
+    <ul>
+        @foreach (var restocking in _restockingTransactions)
+        {
+            <li>
+                <span>@restocking.restockingdate.ToShortDateString() - Total Cost: @restocking.totalcost</span>
+                <button class="btn btn-danger btn-sm" @onclick="() => DeleteTransaction(restocking.id)">Delete</button>
+            </li>
+        }
+    </ul>
+</div>
+}
+
+@if (isSupplierPopupVisible)
+{
+<div class="popup_overlay" @onclick="CloseAndRefreshProductTypes">
+    <div class="popup_window" @onclick:stopPropagation="true">
+        <h3>Add Supplier</h3>
+        <AddSupplierForm _inventory="_inventoryModel" />
+        <button class="close_button" @onclick="CloseAndRefreshProductTypes">Close</button>
+    </div>
+</div>
+}
+@if (isRestockingPopupVisible)
+{
+    <div class="popup_overlay" @onclick="CloseAndRefreshProductTypes">
+        <div class="popup_window" @onclick:stopPropagation="true">
+            <h3>Add Restock</h3>
+            <AddRestockForm _supplierModels="_suppliers" _Inventory="_inventoryModel" _ProductTypes="_productTypes"/>
+            <button class="close_button" @onclick="CloseAndRefreshProductTypes">Close</button>
+        </div>
+    </div>
+}
+
+<style>
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn {
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 12px;
+        cursor: pointer;
+    }
+
+    .btn:hover {
+        background-color: #218838;
+    }
+
+    .product-form {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Space between each item */
+    }
+
+    .toggle-section {
+        margin-bottom: 20px;
+    }
+
+    .list-section ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .list-section ul li {
+        background-color: #f1f1f1;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 4px;
+    }
+    
+    .product-form label {
+        margin-right: 5px;
+        font-weight: bold;
+    }
+
+    .product-form input,
+    .product-form button {
+        padding: 8px 12px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    }
+
+    .product-form button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    .product-form button:hover {
+        background-color: #0056b3;
+    }
+    /* Popup styling */
+    .popup_overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .popup_window {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        min-width: 300px;
+        max-width: 90%;
+    }
+
+    .close_button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 5px 10px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .close_button:hover {
+        background-color: #0056b3;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public InventoryModel _inventoryModel { get; set; }
+
+    private List<SupplierModel> _suppliers { get; set; } = new List<SupplierModel>();
+    private List<RestockingTransactionModel> _restockingTransactions { get; set; }
+    private List<ProductTypeModel> _productTypes { get; set; }
+    
+    private bool _isViewingSuppliers = true;
+    private bool isSupplierPopupVisible = false;
+    private bool isRestockingPopupVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        _restockingTransactions = new List<RestockingTransactionModel>();
+        _suppliers = await SupplierService.GetSuppliersByInventoryId(_inventoryModel.Id);
+        foreach (var sup in _suppliers)
+        {
+            var _restockingTransactionLs = await RestockingTransactionService.GetRestockingTransactionsBySupplierId(sup.id);
+            _restockingTransactions.AddRange(_restockingTransactionLs);
+        }
+        
+        _productTypes = await ProductTypeService.GetProductTypesByInventoryId(_inventoryModel.Id);
+    }
+    
+    private void ToggleView()
+    {
+        _isViewingSuppliers = !_isViewingSuppliers;  // Toggle between suppliers and restocking transactions
+    }
+
+    private async Task DeleteSupplier(int supplierId)
+    {
+        var response = await SupplierService.DeleteSupplier(supplierId);
+
+        if (response)
+        {
+            _suppliers = await SupplierService.GetSuppliersByInventoryId(_inventoryModel.Id);
+            StateHasChanged();
+        }
+        
+        
+        
+    }
+
+    private async Task DeleteTransaction(int transactionId)
+    {
+        var response = await RestockingTransactionService.DeleteRestockingTransaction(transactionId);
+
+        if (response)
+        {
+            _restockingTransactions = new List<RestockingTransactionModel>();
+            foreach (var sup in _suppliers)
+            {
+                var _restockingTransactionLs = await RestockingTransactionService.GetRestockingTransactionsBySupplierId(sup.id);
+                _restockingTransactions.AddRange(_restockingTransactionLs);
+            }
+            
+            StateHasChanged();
+        }
+    }
+    
+    private async Task CloseAndRefreshProductTypes()
+    {
+        isSupplierPopupVisible = false;
+        isRestockingPopupVisible = false;
+        
+        // Re-fetch the product types
+        _suppliers = await SupplierService.GetSuppliersByInventoryId(_inventoryModel.Id);
+        _restockingTransactions = new List<RestockingTransactionModel>();
+        foreach (var sup in _suppliers)
+        {
+            var _restockingTransactionLs = await RestockingTransactionService.GetRestockingTransactionsBySupplierId(sup.id);
+            _restockingTransactions.AddRange(_restockingTransactionLs);
+        }
+        
+        // Trigger UI update
+        StateHasChanged();
+    }
+    
+    private void AddSupplier()
+    {
+        // Logic to add a new product type
+        isSupplierPopupVisible = true;
+    }
+    
+    private void RestockProduct()
+    {
+        // Logic to add a new product type
+        isRestockingPopupVisible = true;
+    }
+    
+}

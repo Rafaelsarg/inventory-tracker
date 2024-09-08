@@ -7,6 +7,7 @@ namespace InventoryManagementSolution.Models
     public class RestockingTransaction
     {
         public int id { get; set; }
+    
 
         [Required]
         public int supplierid { get; set; }
@@ -17,8 +18,10 @@ namespace InventoryManagementSolution.Models
         public DateTime restockingdate { get; set; }
 
         // Navigation property
-        [ForeignKey("SupplierId")]
+        [ForeignKey("supplierid")]
         public Supplier Supplier { get; set; }
+        
+
 
         public ICollection<AvailableProductInstance> AvailableProductInstances { get; set; }
     }

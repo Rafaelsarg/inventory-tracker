@@ -1,0 +1,332 @@
+@page "/dashboard"
+@using InventoryManagementSystemWeb.Components.Models
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@inject IUserService UserService
+@inject IInventoryService InventoryService
+@rendermode InteractiveServer
+
+<body>
+<Header />
+<div class="main-container">
+    <div class="sidebar">
+        <h2 class="sidebar_title">Inventories</h2>
+        <button class="add_inventory_button" @onclick="() => TogglePopup(PopupType.Add)">ADD Inventory</button>
+        @if (_inventories == null || !_inventories.Any())
+        {
+        <p>No inventories available.</p>
+        }
+        else
+        {
+        <ul class="sidebar_list">
+            @foreach (var inventory in _inventories)
+            {
+            <li class="sidebar_item" @onclick="() => ToggleDropdown(inventory)">
+                @inventory.name
+                @if (inventory.IsDropdownVisible)
+                {
+                <div class="sidebar_item_dropdown_menu">
+                    <div class="dropdown_item" @onclick="() => TogglePopup(PopupType.Update, inventory)">Edit Inventory</div>
+                    <div class="dropdown_item" @onclick="() => DeleteInventory(inventory)">Delete  Inventory</div>
+                    <div class="dropdown_item" @onclick="() => ShowProductView(inventory)">Products</div>
+                    <div class="dropdown_item" @onclick="() => ShowSupplyView(inventory)">Supply</div>
+                    <div class="dropdown_item" @onclick="() => ShowConsumerView(inventory)">Consumer</div>
+                </div>
+                }
+            </li>
+            }
+        </ul>
+        }
+
+        @if (popupState.IsVisible)
+        {
+        <div class="popup_overlay" @onclick="() => TogglePopup()">
+            <div class="popup_window" @onclick:stopPropagation="true">
+                @if (popupState.PopupType == PopupType.Add)
+                {
+                <AddInventoryForm isEditMode="false" />
+                }
+                @if (popupState.PopupType == PopupType.Update)
+                {
+                <AddInventoryForm _inventoryModel="_currentInventory" isEditMode="true" />
+                }
+                <button class="close_button" @onclick="() => TogglePopup()">Close</button>
+            </div>
+        </div>
+        }
+    </div>
+    <div class="content">
+        @if (isProductViewVisible)
+        {
+        <ProductView _inventoryModel="_selectedInventory" @key="_selectedInventory.Id"/>
+        }
+        @if (isSupplyViewVisible)
+        {
+            <SupplyView _inventoryModel="_selectedInventory" @key="_selectedInventory.Id"/>
+        }
+        @if(isConsumerViewVisible)
+        {
+            <ConsumerView _inventoryModel="_selectedInventory" @key="_selectedInventory.Id"/>
+        }
+
+    </div>
+</div>
+</body>
+
+
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    .main-container {
+        display: flex;
+        height: 100%;
+    }
+
+    .sidebar {
+        height: 100%;
+        width: 220px;
+        background-color: #343a40; 
+        display: flex;
+        flex-direction: column;
+        padding: 15px;
+        box-sizing: border-box;
+        color: white; 
+    }
+    
+
+    .sidebar_title {
+        margin: 0;
+        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: bold;
+    }
+
+    .add_inventory_button {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .add_inventory_button:hover {
+        background-color: #0056b3;
+    }
+
+    .sidebar_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        flex-grow: 1; 
+        overflow-y: auto; 
+    }
+
+    .sidebar_item {
+        padding: 10px;
+        background-color: #495057;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        cursor: pointer;
+        position: relative;
+        transition: background-color 0.3s ease;
+    }
+
+    .sidebar_item:hover {
+        background-color: #6c757d;
+    }
+
+    .sidebar_item_dropdown_menu {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        background-color: #fff;
+        box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+        width: 100%;
+        color: #343a40;
+    }
+
+    .dropdown_item {
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .dropdown_item:hover {
+        background-color: #f0f0f0;
+    }
+
+    .popup_overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .popup_window {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        min-width: 300px;
+    }
+
+    .close_button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 5px 10px;
+        cursor: pointer;
+        margin-top: 10px;
+    }
+
+    .close_button:hover {
+        background-color: #0056b3;
+    }
+
+    .content {
+        flex-grow: 1; /* Take up the remaining space */
+        padding: 20px;
+    }
+</style>
+
+@code {
+    private List<Inventory> _inventories;
+    private InventoryModel _currentInventory = new InventoryModel();
+    private InventoryModel _selectedInventory = new InventoryModel();
+    private PopupState popupState = new PopupState();
+    private bool isProductViewVisible = false;
+    private bool isSupplyViewVisible = false;
+    private bool isConsumerViewVisible = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        int userID;
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("uid", out var id))
+        {
+            userID = int.Parse(id);
+            await UserService.GetUserInfoByIDAsync(userID);
+        }
+
+        await InventoryService.InitializeInventoriesAsync(UserService.User.Id);
+        _inventories = InventoryService.GetAllInventories();
+    }
+
+    private void ToggleDropdown(Inventory inventory)
+    {
+        inventory.IsDropdownVisible = !inventory.IsDropdownVisible;
+    }
+
+    private void TogglePopup(PopupType type = PopupType.None, Inventory inventory = null)
+    {
+        if (popupState.IsVisible && popupState.PopupType == type)
+        {
+            popupState.IsVisible = false;
+            popupState.PopupType = PopupType.None;
+            _currentInventory = new InventoryModel();
+        }
+        else
+        {
+            popupState.IsVisible = true;
+            popupState.PopupType = type;
+
+            if (inventory != null)
+            {
+                _currentInventory.Id = inventory.id;
+                _currentInventory.Name = inventory.name;
+                _currentInventory.Description = inventory.description;
+                _currentInventory.userid = inventory.userid;
+                _currentInventory.Location = inventory.location;
+            }
+        }
+    }
+
+    private void ShowProductView(Inventory inventory)
+    {
+        _selectedInventory.Id = inventory.id;
+        _selectedInventory.Name = inventory.name;
+        _selectedInventory.Description = inventory.description;
+        _selectedInventory.userid = inventory.userid;
+        _selectedInventory.Location = inventory.location;
+
+        isProductViewVisible = true;
+        isSupplyViewVisible = false;
+        isConsumerViewVisible = false;
+        StateHasChanged();
+    }
+
+    private void ShowSupplyView(Inventory inventory)
+    {
+        _selectedInventory.Id = inventory.id;
+        _selectedInventory.Name = inventory.name;
+        _selectedInventory.Description = inventory.description;
+        _selectedInventory.userid = inventory.userid;
+        _selectedInventory.Location = inventory.location;
+
+        isSupplyViewVisible = true;
+        isProductViewVisible = false;
+        isConsumerViewVisible = false;
+        StateHasChanged();
+    }
+
+    private void ShowConsumerView(Inventory inventory)
+    {
+        _selectedInventory.Id = inventory.id;
+        _selectedInventory.Name = inventory.name;
+        _selectedInventory.Description = inventory.description;
+        _selectedInventory.userid = inventory.userid;
+        _selectedInventory.Location = inventory.location;
+
+        isSupplyViewVisible = false;
+        isProductViewVisible = false;
+        isConsumerViewVisible = true;
+        StateHasChanged();
+    }
+    
+    private async Task DeleteInventory(Inventory inventory)
+    {
+        var response = await InventoryService.DeleteInventoryAsync(inventory.id);
+
+        if (response.IsSuccess)
+        {
+            // Remove the inventory from the local list if deletion was successful
+            Console.WriteLine("Inventory deleted successfully.");
+        }
+        else
+        {
+            Console.WriteLine($"Failed to delete inventory: {response.ErrorMessage}");
+        }
+    }
+
+    private class PopupState
+    {
+        public bool IsVisible { get; set; } = false;
+        public PopupType PopupType { get; set; } = PopupType.None;
+    }
+
+    private enum PopupType
+    {
+        None,
+        Add,
+        Update
+    }
+
+}

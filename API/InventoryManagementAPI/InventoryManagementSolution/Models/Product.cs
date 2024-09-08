@@ -18,7 +18,7 @@ namespace InventoryManagementSolution.Models
         public DateTime creation { get; set; }
 
         // Navigation property
-        [ForeignKey("ProductTypeId")]
+        [ForeignKey("producttypeid")]
         public ProductType ProductType { get; set; }
         
         public ICollection<AvailableProductInstance> AvailableProductInstances { get; set; }

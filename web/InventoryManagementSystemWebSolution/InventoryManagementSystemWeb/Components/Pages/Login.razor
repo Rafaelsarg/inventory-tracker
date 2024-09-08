@@ -1,0 +1,184 @@
+@page "/"
+@using Models
+@inject IUserService UserService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+@if (!string.IsNullOrEmpty(LoginSuccessMessage))
+{
+    <div class="alert alert-danger">@LoginSuccessMessage</div>
+}
+
+@if (!string.IsNullOrEmpty(LoginFailureMessage))
+{
+    <div class="alert alert-success">@LoginFailureMessage</div>
+}
+
+<style>
+    body, html {
+        margin: 0;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-family: Arial, sans-serif; /* Use a modern, clean font */
+        background-color: #f0f2f5; /* Subtle background color */
+    }
+
+    .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f0f2f5; /* Match the previous subtle background color */
+        padding: 20px; /* Add some padding to the container */
+    }
+
+    .login-form {
+        background-color: #ffffff;
+        padding: 25px; /* Increase padding for a more spacious feel */
+        border-radius: 10px; /* Slightly more rounded corners */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); /* Enhanced shadow for better depth */
+        width: 100%;
+        max-width: 400px;
+        border: 1px solid #e0e0e0; /* Light border for a clean separation */
+    }
+
+    .form-label {
+        font-weight: bold;
+        color: #333333; /* Darker color for better readability */
+        margin-bottom: 10px; /* Slightly reduce margin for a tighter layout */
+    }
+
+    .form-control {
+        border-radius: 5px; /* Slightly more rounded input fields */
+        border: 1px solid #ced4da;
+        padding: 10px; /* Increased padding for better usability */
+        font-size: 1rem;
+        transition: border-color 0.3s, box-shadow 0.3s; /* Smooth transitions */
+        margin-bottom: 15px; /* Space between input fields */
+    }
+
+    .form-control:focus {
+        border-color: #007bff; /* Primary blue on focus */
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.25); /* Subtle shadow on focus */
+        outline: none; /* Remove default outline */
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        width: 100%;
+        padding: 10px; /* Match padding to form controls */
+        font-size: 1.2rem;
+        border-radius: 5px; /* Match button corners to form controls */
+        font-weight: bold; /* Bold text for emphasis */
+        cursor: pointer; /* Pointer cursor on hover */
+        transition: background-color 0.3s, box-shadow 0.3s; /* Smooth transitions */
+        color: #fff;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #004085;
+        box-shadow: 0 4px 10px rgba(0, 91, 187, 0.2); /* Add shadow on hover for depth */
+    }
+
+    .text-danger {
+        margin-top: 1rem;
+        color: #dc3545; /* Standardize the danger color */
+        font-size: 0.9rem; /* Ensure the text is smaller for emphasis */
+    }
+
+    .create-account-link {
+        text-align: center;
+        margin-top: 1rem;
+        font-size: 0.9rem; /* Smaller text for the link */
+        color: #007bff; /* Matching link color to the primary button */
+    }
+
+    .create-account-link a {
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .create-account-link a:hover {
+        text-decoration: underline;
+    }
+</style>
+
+
+<div class="container">
+    <div class="login-form">
+        <EditForm Model="_loginModel" OnValidSubmit="HandleLogin" FormName="UserLoginForm">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <InputText id="username" class="form-control" @bind-Value="_loginModel.EmailAddress" placeholder="Enter your username" />
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <InputText id="password" type="password" class="form-control" @bind-Value="_loginModel.Password" placeholder="Enter your password" />
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </EditForm>
+
+        <div class="create-account-link">
+            <a href="/create-user">Don't have an account? Create one here.</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel _loginModel;
+
+    private string? LoginSuccessMessage;
+    private string? LoginFailureMessage;
+    
+    protected override void OnInitialized()
+    {
+        _loginModel = new LoginModel();
+    }
+    
+    public async Task HandleLogin()
+    {
+        try
+        {
+            // Use UserService to handle the login request
+            var loginResponse = await UserService.LoginAsync(_loginModel);
+
+            if (loginResponse.IsSuccess)
+            {
+                // Retrieve user information upon successful login
+                var userResponse = await UserService.GetUserInfoByEmailAsync(_loginModel.EmailAddress);
+                if (userResponse.IsSuccess)
+                {
+                    // Complete the login process
+                    LoginSuccessMessage = "Login successful!";
+                    LoginFailureMessage = null;
+                    Navigation.NavigateTo($"/dashboard?uid={UserService.User.Id}", forceLoad: true);
+                }
+                else
+                {
+                    LoginFailureMessage = "Failed to retrieve user information.";
+                    LoginSuccessMessage = null;
+                }
+            }
+            else
+            {
+                LoginFailureMessage = loginResponse.ErrorMessage ?? "Failed to login.";
+                LoginSuccessMessage = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            LoginFailureMessage = $"An error occurred: {ex.Message}";
+            LoginSuccessMessage = null;
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

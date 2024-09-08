@@ -17,7 +17,7 @@ namespace InventoryManagementSolution.Models
         public DateTime restockingdate { get; set; }
 
         // Navigation property
-        [ForeignKey("CustomerId")]
+        [ForeignKey("customerid")]
         public Customer Customer { get; set; }
 
         public ICollection<SoldProductInstance> SoldProductInstances { get; set; }

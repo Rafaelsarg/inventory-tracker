@@ -1,0 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+namespace InventoryManagementSystemWeb.Components.Models;
+
+public class ProductTypeModel
+{
+    public int id { get; set; }
+    
+    [Required]
+    public int inventoryid { get; set; }
+
+    [Required]
+    [StringLength(255)]
+    public string name { get; set; }
+}

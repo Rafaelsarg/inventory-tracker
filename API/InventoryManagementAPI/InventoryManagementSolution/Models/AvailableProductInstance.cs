@@ -20,13 +20,13 @@ namespace InventoryManagementSolution.Models
         public string sku { get; set; }
 
         // Navigation properties
-        [ForeignKey("ProductId")]
+        [ForeignKey("productid")]
         public Product Product { get; set; }
 
-        [ForeignKey("InventoryId")]
+        [ForeignKey("inventoryid")]
         public Inventory Inventory { get; set; }
 
-        [ForeignKey("RestockingTransactionId")]
+        [ForeignKey("restockingtransactionid")]
         public RestockingTransaction RestockingTransaction { get; set; }
     }
 }

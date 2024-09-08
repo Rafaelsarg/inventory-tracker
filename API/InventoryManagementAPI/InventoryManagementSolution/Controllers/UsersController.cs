@@ -66,7 +66,7 @@ namespace InventoryManagementSolution.Controllers
             {
                 return Unauthorized("Invalid credentials.");
             }
-            Console.WriteLine(loginDto.Password);
+
             if (!VerifyPasswordHash(loginDto.Password, user.InternalAuthentication.passwordhash, user.InternalAuthentication.salt))
             {
                 return Unauthorized("Invalid credentials.");

@@ -14,6 +14,6 @@ namespace InventoryManagementSolution.Models
         public string sku { get; set; }
 
         // Navigation property
-        [ForeignKey("SalesTransactionId")] public SalesTransaction SalesTransaction { get; set; }
+        [ForeignKey("salestransactionid")] public SalesTransaction SalesTransaction { get; set; }
     }
 }

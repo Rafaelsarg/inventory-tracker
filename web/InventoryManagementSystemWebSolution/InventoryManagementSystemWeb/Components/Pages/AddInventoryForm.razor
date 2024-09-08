@@ -1,0 +1,163 @@
+@using InventoryManagementSystemWeb.Components.Models
+@inject IUserService UserService
+@inject IInventoryService InventoryService
+@rendermode InteractiveServer
+
+<h3>@(isEditMode ? "Edit Inventory" : "Add Inventory")</h3>
+
+<div class="inventory-form">
+    <EditForm Model="_inventoryModel" OnValidSubmit="HandleInventorySubmit" FormName="InventoryForm">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" />
+
+        <div class="mb-3">
+            <label for="inventoryname" class="form-label">Inventory Name</label>
+            <InputText id="inventoryname" class="form-control" @bind-Value="_inventoryModel.Name" placeholder="Inventory Name" />
+        </div>
+
+        <div class="mb-3">
+            <label for="description" class="form-label">Description</label>
+            <InputText id="description" class="form-control" @bind-Value="_inventoryModel.Description" placeholder="Inventory Description" />
+        </div>
+
+        <div class="mb-3">
+            <label for="location" class="form-label">Location</label>
+            <InputText id="location" class="form-control" @bind-Value="_inventoryModel.Location" placeholder="Inventory Location" />
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">@((isEditMode) ? "Update" : "Submit")</button>
+    </EditForm>
+
+    @if (!string.IsNullOrEmpty(SuccessMessage))
+    {
+    <div class="alert alert-success mt-3">@SuccessMessage</div>
+    }
+
+    @if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+    <div class="alert alert-danger mt-3">@ErrorMessage</div>
+    }
+</div>
+
+<style>
+    .inventory-form {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-label {
+        color: #343a40;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .form-control {
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        border: 1px solid #ced4da;
+    }
+
+    .btn-block {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    .alert {
+        padding: 10px;
+        border-radius: 4px;
+    }
+
+    .alert-success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public InventoryModel _inventoryModel { get; set; }
+
+    [Parameter]
+    public bool isEditMode { get; set; } = false;
+
+    private string? SuccessMessage;
+    private string? ErrorMessage;
+
+    protected override void OnInitialized()
+    {
+        if (!isEditMode)
+        {
+            _inventoryModel = new InventoryModel();
+        }
+    }
+
+    private async Task EditInventory()
+    {
+        var response = await InventoryService.UpdateInventoryAsync(_inventoryModel);
+
+        if (response.IsSuccess)
+        {
+            Console.WriteLine("Inventory updated successfully.");
+        }
+        else
+        {
+            Console.WriteLine($"Failed to update inventory: {response.ErrorMessage}");
+        }
+    }
+
+    public async Task AddInventory()
+    {
+        _inventoryModel.userid = UserService.User.Id;
+
+        ApiResponse<bool> response;
+
+        if (isEditMode)
+        {
+            response = await InventoryService.UpdateInventoryAsync(_inventoryModel);
+        }
+        else
+        {
+            response = await InventoryService.CreateInventoryAsync(_inventoryModel);
+        }
+
+        if (response.IsSuccess)
+        {
+            SuccessMessage = isEditMode ? "Inventory updated successfully!" : "Inventory created successfully!";
+            ErrorMessage = null;
+
+            if (!isEditMode)
+            {
+                _inventoryModel = new InventoryModel();
+            }
+        }
+        else
+        {
+            ErrorMessage = $"Failed to {(isEditMode ? "update" : "create")} inventory: {response.ErrorMessage}";
+            SuccessMessage = null;
+        }   
+    }
+    public void HandleInventorySubmit()
+    {
+        if (isEditMode)
+        {
+            EditInventory();
+        }
+        else
+        {
+            AddInventory();
+        }
+    }
+}

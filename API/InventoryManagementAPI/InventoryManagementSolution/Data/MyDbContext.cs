@@ -38,10 +38,35 @@ namespace InventoryManagementSolution.Data
             
             // Inventory -> AvailableProductInstances
             modelBuilder.Entity<Inventory>()
+                .HasMany(i => i.ProductTypes)
+                .WithOne(pt => pt.Inventory)
+                .HasForeignKey(pt => pt.inventoryid)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            // Inventory -> AvailableProductInstances
+            modelBuilder.Entity<Inventory>()
                 .HasMany(i => i.AvailableProductInstances)
                 .WithOne(avpi => avpi.Inventory)
                 .HasForeignKey(avpi => avpi.inventoryid)
-                .IsRequired();
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            // Inventory -> Supplier
+            modelBuilder.Entity<Inventory>()
+                .HasMany(i => i.Suppliers)
+                .WithOne(s => s.Inventory)
+                .HasForeignKey(s => s.inventoryid)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            // Inventory -> AvailableProductInstances
+            modelBuilder.Entity<Inventory>()
+                .HasMany(i => i.Customers)
+                .WithOne(c => c.Inventory)
+                .HasForeignKey(c => c.inventoryid)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
             
             // ProductType -> Product
             modelBuilder.Entity<ProductType>()

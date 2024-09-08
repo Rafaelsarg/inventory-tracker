@@ -1,0 +1,52 @@
+inventory-management-system/
+├── .gitignore
+├── README.md
+├── db/
+│   ├── schema/
+│   │   ├── create_tables.sql
+│   │   ├── users.sql
+│   │   ├── inventories.sql
+│   │   ├── product_types.sql
+│   │   ├── products.sql
+│   │   ├── product_instances.sql
+│   │   ├── suppliers.sql
+│   │   ├── customers.sql
+│   │   ├── sales_transactions.sql
+│   │   └── restocking_transactions.sql
+│   └── diagrams/
+│       ├── schema.md
+│       └── schema.puml
+├── web/
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── services/
+│   │   ├── utils/
+│   │   └── App.js
+│   └── package.json
+├── api/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── config/
+│   ├── db/
+│   ├── middleware/
+│   └── app.js
+├── tests/
+│   ├── backend/
+│   └── frontend/
+├── docs/
+│   ├── api/
+│   │   ├── api_specification.md
+│   │   └── endpoints.md
+│   ├── frontend/
+│   │   └── ui_ux_design.md
+│   └── setup_guide.md
+├── scripts/
+│   ├── start_dev.sh
+│   ├── deploy.sh
+│   └── backup_db.sh
+└── package.json
+
