@@ -27,7 +27,9 @@ CREATE TABLE inventory (
 
 CREATE TABLE producttype (
     id SERIAL PRIMARY KEY,
-    name varchar(255)
+    name varchar(255),
+	inventoryid int,
+	FOREIGN KEY (inventoryid) REFERENCES inventory(id)
 );
 
 CREATE TABLE product (
@@ -41,7 +43,9 @@ CREATE TABLE product (
 CREATE TABLE supplier (
     id SERIAL PRIMARY KEY,
     name varchar(255),
-    contactinfo varchar(255)
+    contactinfo varchar(255),
+	inventoryid int,
+	FOREIGN KEY (inventoryid) REFERENCES inventory(id)
 );
 
 CREATE TABLE restockingtransaction (
@@ -67,7 +71,9 @@ CREATE TABLE availableproductinstance (
 CREATE TABLE customer (
     id SERIAL PRIMARY KEY,
     name varchar(255),
-    contactinfo varchar(255)
+    contactinfo varchar(255),
+	inventoryid int,
+	FOREIGN KEY (inventoryid) REFERENCES inventory(id)
 );
 
 CREATE TABLE salestransaction (
